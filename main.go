@@ -12,7 +12,18 @@ import (
 	"log"
 	"github.com/go-sql-driver/mysql"
   "reflect"
+  "os"
+  "github.com/joho/godotenv"
 )
+
+func readEnvVariable(key string) (string, bool) {
+  value, not_empty := os.LookupEnv(key)
+  if !not_empty {
+      fmt.Printf("%s not set\n", key)
+      return "", false
+  }
+  return value, true
+}
 
 func generateToken() string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -48,23 +59,33 @@ func testAuth(c *gin.Context) {
 	}
 }
 
-func getDatabaseHandle() {
+var db *sql.DB
+func getDatabaseHandle() bool {
+  db_user, user_ok := readEnvVariable("DB_USER")
+  db_pwd, pwd_ok := readEnvVariable("DB_PWD")
+  if !user_ok || !pwd_ok {
+    fmt.Println("db env is empty!!!")
+    return false
+  }
 	cfg := mysql.Config{
-        User:   "",//os.Getenv("DBUSER"),
-        Passwd: "",//os.Getenv("DBPASS"),
-        Net:    "tcp",
-        Addr:   "127.0.0.1:3306",
-        DBName: "online_war_chess",
-    }
-    var err error
-    db, err = sql.Open("mysql", cfg.FormatDSN())
-    if err != nil {
-        log.Fatal(err)
-    }
-    pingErr := db.Ping()
-    if pingErr != nil {
-        log.Fatal(pingErr)
-    }
+    User:   db_user,
+    Passwd: db_pwd,
+    Net:    "tcp",
+    Addr:   "127.0.0.1:3306",
+    DBName: "online_war_chess",
+  }
+  var err error
+  db, err = sql.Open("mysql", cfg.FormatDSN())
+  if err != nil {
+    log.Fatal(err)
+    return false
+  }
+  pingErr := db.Ping()
+  if pingErr != nil {
+    log.Fatal(pingErr)
+    return false
+  }
+  return true
 }
 
 type player struct {
@@ -108,14 +129,18 @@ func login(c *gin.Context) {
 	}
 }
 
-var db *sql.DB
-
 func main() {
-	getDatabaseHandle();
-	router := gin.Default()
-	router.GET("/testauth", testAuth)
-	router.POST("/account", changeAccountInfo)
-  router.POST("/login", login)
-
-  router.Run("localhost:8080")
+  err := godotenv.Load() //load .env file
+  if err != nil {
+    log.Fatal("Error loading .env file", err)
+  } else {
+    is_success := getDatabaseHandle()
+    if is_success {
+      router := gin.Default()
+      router.GET("/testauth", testAuth)
+      router.POST("/account", changeAccountInfo)
+      router.POST("/login", login)
+      router.Run("localhost:8080")
+    }
+  }
 }
