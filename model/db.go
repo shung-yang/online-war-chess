@@ -37,3 +37,7 @@ func GetDatabaseHandle() bool {
 	}
 	return true
 }
+
+func GetDBInstance() *sql.DB {
+	return db
+}
