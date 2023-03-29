@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS room (
+  id int AUTO_INCREMENT,
+  name nvarchar(100) UNIQUE NOT NULL,
+  admin_id int UNIQUE NOT NULL,
+  other_player_id int UNIQUE DEFAULT NULL,
+  password varchar(20) DEFAULT NULL,
+  PRIMARY KEY (id),
+  FOREIGN KEY(admin_id) REFERENCES player(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY(other_player_id) REFERENCES player(id) ON DELETE SET NULL ON UPDATE CASCADE
+);

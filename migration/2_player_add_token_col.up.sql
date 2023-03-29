@@ -1,0 +1,2 @@
+ALTER TABLE player
+ADD COLUMN token VARCHAR(300) AFTER id;
