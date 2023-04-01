@@ -6,6 +6,7 @@ import (
   "github.com/joho/godotenv"
   "online_chess/model"
 	"online_chess/modules/player"
+	"online_chess/modules/room"
 	_ "online_chess/docs"
 	"github.com/swaggo/gin-swagger"
 	"github.com/swaggo/files"
@@ -28,10 +29,12 @@ func main() {
     is_success := model.GetDatabaseHandle()
     if is_success {
       router := gin.Default()
+			router.Use(auth())
       router.GET("/testauth", player.TestAuth)
       router.POST("/account", player.ChangeAccountInfo)
       router.POST("/login", player.Login)
 			router.POST("/register", player.Register)
+			router.POST("/room", room.Create)
 
 			router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
       router.Run("localhost:8080")

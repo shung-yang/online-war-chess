@@ -20,6 +20,15 @@ type Register_player struct {
   Password string  `json:"password" binding:"min=8" example:"asdqwezxc"`
 }
 
+type Player struct {
+	Id int
+	Token string
+	Name string
+	Email string
+	Password string
+  Level  int8
+}
+
 func TestAuth(c *gin.Context) {
 	result, _ := util.VerifyToken(strings.Split(c.GetHeader("Authorization"), " ")[1])
 	if result {
@@ -56,8 +65,6 @@ func Register(c *gin.Context) {
 		log.Println("register bind err:", err)
 		c.JSON(http.StatusBadRequest, gin.H{ "error": err.Error() })
 	} else {
-		//inputs.Level = 1 //database default value 1
-		//log.Printf("register inputs: %v email: %s password: %s\n", inputs, inputs.Email, inputs.Password)
 		token, err := AddNewPlayer(inputs)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{ "error": err.Error() })
@@ -90,7 +97,13 @@ func Login(c *gin.Context) {
 	} else {
 		valid_password_result := bcrypt.CompareHashAndPassword(hash_password, []byte(inputs.Password))
 		if valid_password_result == nil {
-			c.JSON(http.StatusOK, gin.H{ "token": util.GenerateToken()})
+			token := util.GenerateToken()
+			err := UpdatePlayerToken(inputs.Email, token)
+			if err != nil { 
+				c.IndentedJSON(http.StatusInternalServerError, gin.H{ "error": err.Error() })
+			} else {
+				c.JSON(http.StatusOK, gin.H{ "token": token })
+			}
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{ "error": "Email or Password is not correct" })
 		}

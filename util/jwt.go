@@ -23,6 +23,9 @@ func VerifyToken(request_token string) (bool, error) {
 		}
 		return []byte("lakgfnlawng"), nil
 	})
+	if err != nil {
+		return false, err
+	}
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid{
 		var expiry_time, _ = claims["exp"].(float64)
 		fmt.Println("claims exp:", expiry_time, reflect.TypeOf(claims["exp"]), time.Unix(int64(expiry_time), 0))

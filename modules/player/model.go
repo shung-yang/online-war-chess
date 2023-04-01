@@ -36,3 +36,37 @@ func AddNewPlayer(inputs Register_player) (string, error) {
 		return token, nil
 	}
 }
+
+func UpdatePlayerToken(email, token string) error {
+	_, err := model.GetDBInstance().Exec(
+		"UPDATE player SET token = ? WHERE email = ?",
+		token,
+		email,
+	)
+	return err
+}
+
+func QueryIdByToken(token string) (int, error) {
+	var id int
+	err := model.GetDBInstance().QueryRow(
+			"SELECT id FROM player WHERE token = ?",
+			token,
+		).Scan(&id);
+	return id, err
+}
+
+func QueryPlayerById(id int) (Player, error) {
+	var player Player
+	err := model.GetDBInstance().QueryRow(
+		"SELECT * FROM player WHERE id = ?",
+		id,
+	).Scan(
+		&player.Id,
+		&player.Token,
+		&player.Name,
+		&player.Email,
+		&player.Password,
+		&player.Level,
+	);
+	return player, err
+}
