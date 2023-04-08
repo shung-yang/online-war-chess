@@ -35,6 +35,7 @@ func main() {
       router.POST("/login", player.Login)
 			router.POST("/register", player.Register)
 			router.POST("/room", room.Create)
+			router.GET("/rooms", room.GetList)
 
 			router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
       router.Run("localhost:8080")
