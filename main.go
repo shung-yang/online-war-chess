@@ -37,6 +37,7 @@ func main() {
 			authorized.Use(auth())
 			{
 				authorized.POST("/room", room.Create)
+				authorized.POST("/room/join", room.Join)
 				authorized.GET("/rooms", room.GetList)
 			}
 

@@ -1,10 +1,12 @@
 package room
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"online_chess/modules/player"
 	"strings"
+	"sync"
 )
 
 type create_room_input struct {
@@ -77,13 +79,83 @@ func GetList(c *gin.Context) {
 	var query room_list_query
 	err := c.ShouldBindQuery(&query)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{ "error": err.Error() })
+		c.JSON(http.StatusBadRequest, gin.H{ "error": err.Error() })
 	} else {
 		room_list, err := GetRoomList(query.Page - 1, 0)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{ "error": err.Error() })
 		} else {
 			c.JSON(http.StatusOK, room_list)
+		}
+	}
+}
+
+func ValidRoomCanJoin(player_id, room_id int) error {
+	var valid_room_err error
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		is_exist, err := CheckRoomIsExist(room_id)
+		if !is_exist {
+			valid_room_err = fmt.Errorf("The room you are trying to join does not exist")
+		} else if err != nil {
+			valid_room_err = err
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		is_in_room, _, err := CheckPlayerIsInRoom(player_id)
+		if is_in_room {
+			valid_room_err = fmt.Errorf("You already join the other room")
+		} else if err != nil {
+			valid_room_err = err
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		vancancy_in_room, err := CheckVacancyInRoom(room_id)
+		if !vancancy_in_room {
+			valid_room_err = fmt.Errorf("The room you want to attend is no longer available")
+		} else if err != nil {
+			valid_room_err = err
+		}
+	}()
+	wg.Wait()
+	return valid_room_err
+}
+
+type join_query struct {
+	Room int `form:"room" binding:"numeric"`
+}
+// @Summary      player joins room
+// @Description  player joins room
+// @Tags         room
+// @Accept       json
+// @Produce      json
+// @Param page query uint true "player join room by room id"
+// @Success      200  {array}  string "success to join room"
+// @Failure      401  {object}  object{error=string}
+// @Failure      500  {object}  object{error=string}
+// @Router       /room/join [post]
+func Join(c *gin.Context) {
+	var query join_query
+	player_id, err := player.QueryIdByToken(strings.Split(c.GetHeader("Authorization"), " ")[1])
+	err = c.ShouldBindQuery(&query)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{ "error": err.Error() })
+	}
+	valid_room_err := ValidRoomCanJoin(player_id, query.Room)
+	if valid_room_err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{ "error": valid_room_err.Error() })
+	} else {
+		err := PlayerJoinRoom(player_id, query.Room)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{ "error": err.Error() })
+		} else {
+			c.JSON(http.StatusOK, "success to join room")
 		}
 	}
 }
