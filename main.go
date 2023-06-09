@@ -1,15 +1,16 @@
 package main
 
 import (
-  "github.com/gin-gonic/gin"
-  "log"
-  "github.com/joho/godotenv"
-  "online_chess/model"
-	"online_chess/modules/player"
-	"online_chess/modules/room"
+	"log"
 	_ "online_chess/docs"
-	"github.com/swaggo/gin-swagger"
-	"github.com/swaggo/files"
+	"online_chess/model"
+	"online_chess/modules/game"
+	"online_chess/modules/player"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // @title           Online War Chess
@@ -22,27 +23,24 @@ import (
 // @externalDocs.description  OpenAPI
 // @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
-  err := godotenv.Load() //load .env file
-  if err != nil {
-    log.Fatal("Error loading .env file", err)
-  } else {
-    is_success := model.GetDatabaseHandle()
-    if is_success {
-      router := gin.Default()
-      router.GET("/testauth", player.TestAuth)
-      router.POST("/account", player.ChangeAccountInfo)
+	err := godotenv.Load() //load .env file
+	if err != nil {
+		log.Fatal("Error loading .env file", err)
+	} else {
+		is_success := model.GetDatabaseHandle()
+		if is_success {
+			router := gin.Default()
+			router.GET("/testauth", player.TestAuth)
+			router.POST("/account", player.ChangeAccountInfo)
 			router.POST("/login", player.Login)
 			router.POST("/register", player.Register)
-			authorized := router.Group("/")
-			authorized.Use(auth())
-			{
-				authorized.POST("/room", room.Create)
-				authorized.POST("/room/join", room.Join)
-				authorized.GET("/rooms", room.GetList)
-			}
+
+			wsServer := game.NewWebSocketServer()
+			go wsServer.Run()
+			router.GET("/ws", attachWsServer(wsServer), game.RunClient)
 
 			router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-      router.Run("localhost:8080")
-    }
-  }
+			router.Run("localhost:8080")
+		}
+	}
 }
