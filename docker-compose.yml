@@ -1,0 +1,22 @@
+services:
+  db:
+    image: mysql:8.0.31
+    ports:
+      - "3307:3306"
+    volumes:
+      - player_db:/var/lib/mysql/
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PWD}
+      - MYSQL_DATABASE=online_war_chess
+  server:
+    build: .
+    image: shungyang/online_war_chess
+    ports:
+      - "0.0.0.0:8080:8080"
+    restart: on-failure
+    env_file:
+      - .env
+volumes:
+  player_db:
+    external: false
+  

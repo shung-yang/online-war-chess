@@ -2,21 +2,21 @@ package main
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
+	"online_chess/util"
+	"os"
+	"strconv"
+
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
-  _ "github.com/golang-migrate/migrate/v4/source/file"
-	"os"
-	"online_chess/util"
-	"strconv"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
-  args := os.Args
+	args := os.Args
 	var (
 		migrate_version string
 		confirm_migrate string
-		input_hint string
+		input_hint      string
 	)
 
 	if len(args) == 1 {
@@ -34,11 +34,6 @@ func main() {
 		return
 	}
 
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Error loading .env file", err)
-		return
-	}
 	db_user, user_ok := util.ReadEnvVariable("DB_USER")
 	db_pwd, pwd_ok := util.ReadEnvVariable("DB_PWD")
 	if !user_ok || !pwd_ok {
@@ -47,7 +42,7 @@ func main() {
 	}
 	m, err := migrate.New(
 		"file://migration",
-		"mysql://" + db_user + ":" + db_pwd + "@tcp(localhost:3306)/online_war_chess?query")
+		"mysql://"+db_user+":"+db_pwd+"@tcp(db:3306)/online_war_chess?query")
 	if err != nil {
 		fmt.Println("migrate.New fail error: ", err)
 		return

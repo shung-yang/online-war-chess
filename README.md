@@ -10,5 +10,6 @@ _online-war-chess 是遊戲的後端專案，前端部分則托管在 online_che
 * run migration
 `go run ./migration`
 
-### Start the app
-`go run .`
+### StepS to  Start the app
+1.  Create a .env file (please refer to .env.example for the file contents).
+2.  `docker compose up`
